@@ -1,0 +1,39 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-test-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t quiz-ai .
+
+      - name: Run container for smoke test
+        run: |
+          docker run -d -p 5000:5000 --name quiz-ai-test \
+          -e GEMINI_KEY=dummy_key \
+          -e STUDENT_ID=test123 \
+          quiz-ai
+          sleep 5
+          curl http://localhost:5000/api/health | grep ok
+          docker stop quiz-ai-test
+          docker rm quiz-ai-test
+
+  deploy:
+    needs: build-test-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy step placeholder
+        run: echo "Deployment step"
